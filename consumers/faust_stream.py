@@ -52,6 +52,42 @@ app = faust.App("stations-stream", broker="kafka://localhost:9092", store="memor
 # then you would set the `line` of the `TransformedStation` record to the string `"red"`
 #
 #
+# Input topic from Kafka Connect
+topic = app.topic("org.chicago.cta.stations", value_type=Station)
+
+# Output topic
+out_topic = app.topic("org.chicago.cta.stations.table.v1", value_type=TransformedStation, partitions=1)
+
+# Faust Table
+table = app.Table(
+    "stations-table",
+    default=TransformedStation,
+    partitions=1,
+    changelog_topic=out_topic,
+)
+
+
+@app.agent(topic)
+async def transform_stations(stations):
+    async for station in stations:
+        if station.red:
+            line = "red"
+        elif station.blue:
+            line = "blue"
+        elif station.green:
+            line = "green"
+        else:
+            line = "unknown"
+
+        transformed = TransformedStation(
+            station_id=station.station_id,
+            station_name=station.station_name,
+            order=station.order,
+            line=line,
+        )
+
+        table[station.station_id] = transformed
+        await out_topic.send(value=transformed)
 
 
 if __name__ == "__main__":
