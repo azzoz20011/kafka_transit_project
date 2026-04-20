@@ -82,7 +82,7 @@ services:
     - "schema-registry"
 
   ksql:
-    image: confluentinc/cp-ksql-server:5.2.2
+    image: confluentinc/cp-ksqldb-server:latest
     ports:
     - "8088:8088"
     environment:
