@@ -68,7 +68,32 @@ def configure_connector():
     ## Ensure a healthy response was given
     #resp.raise_for_status()
     #logging.debug("connector created successfully")
+    resp = requests.post(
+        KAFKA_CONNECT_URL,
+        headers={"Content-Type": "application/json"},
+        data=json.dumps({
+            "name": CONNECTOR_NAME,
+            "config": {
+                "connector.class": "io.confluent.connect.jdbc.JdbcSourceConnector",
+                "key.converter": "org.apache.kafka.connect.json.JsonConverter",
+                "key.converter.schemas.enable": "false",
+                "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+                "value.converter.schemas.enable": "false",
+                "batch.max.rows": "500",
+                "connection.url": "jdbc:postgresql://postgres:5432/cta",
+                "connection.user": "cta_admin",
+                "connection.password": "chicago",
+                "table.whitelist": "stations",
+                "mode": "incrementing",
+                "incrementing.column.name": "stop_id",
+                "topic.prefix": "org.chicago.cta.station.",
+                "poll.interval.ms": "60000",
+            }
+        }),
+    )
 
+    resp.raise_for_status()
+    logging.debug("connector created successfully")
 
 if __name__ == "__main__":
     configure_connector()
