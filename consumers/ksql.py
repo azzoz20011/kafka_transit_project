@@ -21,7 +21,7 @@ KSQL_URL = "http://localhost:8088"
 #       Make sure to cast the COUNT of station id to `count`
 #       Make sure to set the value format to JSON
 
-KSQL_STATEMENT = """
+KSQL_STATEMENTt = """
 CREATE TABLE turnstile (
     ???
 ) WITH (
@@ -32,7 +32,24 @@ CREATE TABLE turnstile_summary
 WITH (???) AS
     ???
 """
+KSQL_STATEMENT = """
+CREATE TABLE turnstile (
+    station_id INT,
+    station_name VARCHAR,
+    line VARCHAR
+) WITH (
+    KAFKA_TOPIC='org.chicago.cta.station.turnstile',
+    VALUE_FORMAT='AVRO',
+    KEY='timestamp'
+);
 
+CREATE TABLE turnstile_summary
+WITH (KAFKA_TOPIC='TURNSTILE_SUMMARY', VALUE_FORMAT='JSON') AS
+    SELECT station_id,
+           COUNT(station_id) AS count
+    FROM turnstile
+    GROUP BY station_id;
+"""
 
 def execute_statement():
     """Executes the KSQL statement against the KSQL API"""
