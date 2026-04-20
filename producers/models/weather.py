@@ -107,6 +107,26 @@ class Weather(Producer):
         #    ),
         #)
         #resp.raise_for_status()
+        resp = requests.post(
+            f"{Weather.rest_proxy_url}/topics/{urllib.parse.quote(self.topic_name)}",
+            headers={"Content-Type": "application/vnd.kafka.avro.v2+json"},
+            data=json.dumps(
+                {
+                    "key_schema": json.dumps(Weather.key_schema),
+                    "value_schema": json.dumps(Weather.value_schema),
+                    "records": [
+                        {
+                            "key": {"timestamp": self.time_millis()},
+                            "value": {
+                                "temperature": self.temp,
+                                "status": self.status.name,
+                            },
+                        }
+                    ],
+                }
+            ),
+        )
+        resp.raise_for_status()
 
         logger.debug(
             "sent weather data to kafka, temp: %s, status: %s",
