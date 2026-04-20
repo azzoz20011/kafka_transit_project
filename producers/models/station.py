@@ -20,6 +20,7 @@ class Station(Producer):
     # TODO: Define this value schema in `schemas/station_value.json, then uncomment the below
     #
     #value_schema = avro.load(f"{Path(__file__).parents[0]}/schemas/arrival_value.json")
+    value_schema = avro.load(f"{Path(__file__).parents[0]}/schemas/arrival_value.json")
 
     def __init__(self, station_id, name, color, direction_a=None, direction_b=None):
         self.name = name
@@ -37,10 +38,13 @@ class Station(Producer):
         # replicas
         #
         #
-        topic_name = f"{station_name}" # TODO: Come up with a better topic name
+        topic_name = f"org.chicago.cta.station.arrivals.{station_name}"
         super().__init__(
             topic_name,
             key_schema=Station.key_schema,
+            value_schema=Station.value_schema,
+            num_partitions=1,
+            num_replicas=1,
             # TODO: value_schema=Station.value_schema, # TODO: Uncomment once schema is defined
             # TODO: num_partitions=???,
             # TODO: num_replicas=???,
@@ -74,7 +78,20 @@ class Station(Producer):
         #        #
         #    },
         #)
-
+        self.producer.produce(
+            topic=self.topic_name,
+            key={"timestamp": self.time_millis()},
+            value={
+                "station_id": self.station_id,
+                "train_id": str(train.train_id),
+                "direction": direction,
+                "line": self.color.name if hasattr(self.color, "name") else str(self.color),
+                "train_status": str(train.status),
+                "prev_station_id": int(prev_station_id),
+                "prev_direction": str(prev_direction),
+            },
+        )
+        self.producer.poll(0)
     def __str__(self):
         return "Station | {:^5} | {:<30} | Direction A: | {:^5} | departing to {:<30} | Direction B: | {:^5} | departing to {:<30} | ".format(
             self.station_id,
