@@ -8,7 +8,7 @@ import urllib.parse
 
 import requests
 
-from models.producer import Producer
+from .producer import Producer
 
 
 logger = logging.getLogger(__name__)
@@ -82,7 +82,6 @@ class Weather(Producer):
         # specify the Avro schemas and verify that you are using the correct Content-Type header.
         #
         #
-        logger.info("weather kafka proxy integration incomplete - skipping")
         #resp = requests.post(
         #    #
         #    #

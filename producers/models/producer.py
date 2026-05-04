@@ -44,6 +44,8 @@ class Producer:
             "bootstrap.servers": "localhost:9092",
             "schema.registry.url": "http://localhost:8081",
             "client.id": self.topic_name,
+            #"num_partitions": self.num_partitions,
+            #"num_replicas": self.num_replicas,
         }
 
         # If the topic does not already exist, try to create it
@@ -88,7 +90,6 @@ class Producer:
                 else:
                     logger.info("Failed to create topic %s: %s", topic_name, e)
 
-        logger.info("topic creation kafka integration incomplete - skipping")
 
     def time_millis(self):
         return int(round(time.time() * 1000))
@@ -102,7 +103,6 @@ class Producer:
         #
         self.producer.flush()
 
-        logger.info("producer close incomplete - skipping")
 
     def time_millis(self):
         """Use this function to get the key for Kafka Events"""

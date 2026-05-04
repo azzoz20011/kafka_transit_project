@@ -55,25 +55,86 @@ class Line:
         )
 
     def process_message(self, message):
+        # """Given a kafka message, extract data"""
+        # # TODO: Based on the message topic, call the appropriate handler.
+        # topic = message.topic()
+
+        # if True: # Set the conditional correctly to the stations Faust Table
+        #     try:
+        #         value = json.loads(message.value())
+        #         self._handle_station(value)
+        #     except Exception as e:
+        #         logger.fatal("bad station? %s, %s", value, e)
+        # elif topic.startswith("org.chicago.cta.station.arrivals."):
+        #     self._handle_arrival(message)
+
+        # # KSQL Turnstile Summary topic
+        # elif topic == "TURNSTILE_SUMMARY":
+        #     json_data = json.loads(message.value())
+
+        #     # KSQL often outputs uppercase field names
+        #     station_id = json_data.get("STATION_ID")
+
+        #     # fallback if your output uses lowercase
+        #     if station_id is None:
+        #         station_id = json_data.get("station_id")
+
+        #     station = self.stations.get(station_id)
+        #     if station is None:
+        #         logger.debug("unable to handle message due to missing station")
+        #         return
+
+        #     station.process_message(json_data)
+
+        # else:
+        #     logger.debug(
+        #         "unable to find handler for message from topic %s", topic
+        #     )
         """Given a kafka message, extract data"""
-        # TODO: Based on the message topic, call the appropriate handler.
-        if True: # Set the conditional correctly to the stations Faust Table
+        topic = message.topic()
+
+        def parse_value(message):
+            raw_value = message.value()
+
+            if isinstance(raw_value, dict):
+                return raw_value
+
+            if isinstance(raw_value, bytes):
+                raw_value = raw_value.decode("utf-8")
+
+            return json.loads(raw_value)
+
+        if topic == "org.chicago.cta.stations.table.v1":
+            value = None
             try:
-                value = json.loads(message.value())
+                value = parse_value(message)
                 self._handle_station(value)
             except Exception as e:
-                logger.fatal("bad station? %s, %s", value, e)
-        elif True: # Set the conditional to the arrival topic
+                logger.exception("bad station? %s", value)
+
+        elif topic.startswith("org.chicago.cta.station.arrivals."):
             self._handle_arrival(message)
-        elif True: # Set the conditional to the KSQL Turnstile Summary Topic
-            json_data = json.loads(message.value())
-            station_id = json_data.get("STATION_ID")
-            station = self.stations.get(station_id)
-            if station is None:
-                logger.debug("unable to handle message due to missing station")
-                return
-            station.process_message(json_data)
+
+        elif topic == "TURNSTILE_SUMMARY":
+            json_data = None
+            try:
+                json_data = parse_value(message)
+
+                station_id = json_data.get("STATION_ID")
+                if station_id is None:
+                    station_id = json_data.get("station_id")
+
+                station = self.stations.get(station_id)
+                if station is None:
+                    logger.debug("unable to handle message due to missing station")
+                    return
+
+                station.process_message(json_data)
+
+            except Exception as e:
+                logger.exception("bad turnstile summary message: %s", json_data)
+
         else:
             logger.debug(
-                "unable to find handler for message from topic %s", message.topic
+                "unable to find handler for message from topic %s", topic
             )

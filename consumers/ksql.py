@@ -21,26 +21,16 @@ KSQL_URL = "http://localhost:8088"
 #       Make sure to cast the COUNT of station id to `count`
 #       Make sure to set the value format to JSON
 
-KSQL_STATEMENTt = """
-CREATE TABLE turnstile (
-    ???
-) WITH (
-    ???
-);
 
-CREATE TABLE turnstile_summary
-WITH (???) AS
-    ???
-"""
 KSQL_STATEMENT = """
 CREATE TABLE turnstile (
-    station_id INT,
+    station_id INT PRIMARY KEY,
     station_name VARCHAR,
     line VARCHAR
 ) WITH (
-    KAFKA_TOPIC='org.chicago.cta.station.turnstile',
-    VALUE_FORMAT='AVRO',
-    KEY='timestamp'
+    KAFKA_TOPIC='org.chicago.cta.station.turnstile.lake',
+    PARTITIONS=1,
+    VALUE_FORMAT='AVRO'
 );
 
 CREATE TABLE turnstile_summary
@@ -70,6 +60,8 @@ def execute_statement():
     )
 
     # Ensure that a 2XX status code was returned
+    print("STATUS:", resp.status_code)
+    print("RESPONSE:", resp.text)
     resp.raise_for_status()
 
 

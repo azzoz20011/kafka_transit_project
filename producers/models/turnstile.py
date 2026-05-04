@@ -4,9 +4,8 @@ from pathlib import Path
 
 from confluent_kafka import avro
 
-from models.producer import Producer
-from models.turnstile_hardware import TurnstileHardware
-
+from .producer import Producer
+from .turnstile_hardware import TurnstileHardware
 
 logger = logging.getLogger(__name__)
 
@@ -57,10 +56,23 @@ class Turnstile(Producer):
     def run(self, timestamp, time_step):
         """Simulates riders entering through the turnstile."""
         num_entries = self.turnstile_hardware.get_entries(timestamp, time_step)
-        logger.info("turnstile kafka integration incomplete - skipping")
         #
         #
         # TODO: Complete this function by emitting a message to the turnstile topic for the number
         # of entries that were calculated
         #
         #
+        for _ in range(num_entries):
+            self.producer.produce(
+                topic=self.topic_name,
+            key={
+                "timestamp": int(timestamp.timestamp())
+            },               value={
+                    "timestamp": int(timestamp.timestamp()),
+                    "station_id": int(self.station.station_id),
+                    "station_name": self.station.name,
+                    "line": self.station.color.name,
+                },
+            )
+
+        self.producer.flush()

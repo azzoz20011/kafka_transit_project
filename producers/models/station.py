@@ -4,8 +4,8 @@ from pathlib import Path
 
 from confluent_kafka import avro
 
-from models import Turnstile
-from models.producer import Producer
+from .producer import Producer
+from .turnstile import Turnstile
 
 
 logger = logging.getLogger(__name__)
@@ -66,7 +66,6 @@ class Station(Producer):
         # TODO: Complete this function by producing an arrival message to Kafka
         #
         #
-        logger.info("arrival kafka integration incomplete - skipping")
         #self.producer.produce(
         #    topic=self.topic_name,
         #    key={"timestamp": self.time_millis()},
@@ -87,8 +86,8 @@ class Station(Producer):
                 "direction": direction,
                 "line": self.color.name if hasattr(self.color, "name") else str(self.color),
                 "train_status": str(train.status),
-                "prev_station_id": int(prev_station_id),
-                "prev_direction": str(prev_direction),
+                "prev_station_id": int(prev_station_id) if prev_station_id is not None else -1,
+                "prev_direction": prev_direction if prev_direction is not None else "",
             },
         )
         self.producer.poll(0)
