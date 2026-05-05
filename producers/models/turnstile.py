@@ -44,7 +44,7 @@ class Turnstile(Producer):
             # TODO: value_schema=Turnstile.value_schema, TODO: Uncomment once schema is defined
             # TODO: num_partitions=???,
             # TODO: num_replicas=???,
-            f"org.chicago.cta.station.turnstile.{station_name}",
+            f"org.chicago.cta.station.turnstile",
             key_schema=Turnstile.key_schema,
             value_schema=Turnstile.value_schema,
             num_partitions=1,
