@@ -1,5 +1,6 @@
 """Defines core consumer functionality"""
 import logging
+import json
 
 import confluent_kafka
 from confluent_kafka import Consumer
@@ -29,6 +30,7 @@ class KafkaConsumer:
         self.sleep_secs = sleep_secs
         self.consume_timeout = consume_timeout
         self.offset_earliest = offset_earliest
+        self.is_avro = is_avro
 
         #
         #
@@ -64,14 +66,14 @@ class KafkaConsumer:
         """Callback for when topic assignment takes place"""
         # TODO: If the topic is configured to use `offset_earliest` set the partition offset to
         # the beginning or earliest
-        logger.info("on_assign is incomplete - skipping")
-        for partition in partitions:
-            partition.offset = confluent_kafka.OFFSET_BEGINNING
-            #
-            #
-            # TODO
-            #
-            #
+        if self.offset_earliest:
+            for partition in partitions:
+                partition.offset = confluent_kafka.OFFSET_BEGINNING
+                #
+                #
+                # TODO
+                #
+                #
 
         logger.info("partitions assigned for %s", self.topic_name_pattern)
         consumer.assign(partitions)
@@ -86,13 +88,6 @@ class KafkaConsumer:
 
     def _consume(self):
         """Polls for a message. Returns 1 if a message was received, 0 otherwise"""
-        #
-        #
-        # TODO: Poll Kafka for messages. Make sure to handle any errors or exceptions.
-        # Additionally, make sure you return 1 when a message is processed, and 0 when no message
-        # is retrieved.
-        #
-        #
         try:
             message = self.consumer.poll(self.consume_timeout)
 
@@ -102,6 +97,43 @@ class KafkaConsumer:
             if message.error():
                 logger.error("consumer error: %s", message.error())
                 return 0
+
+            # Normal Kafka Consumer returns bytes for JSON topics.
+            # AvroConsumer already returns decoded dicts.
+            if not self.is_avro:
+                raw_value = message.value()
+
+                if raw_value is None:
+                    return 0
+
+                try:
+                    decoded_value = json.loads(raw_value.decode("utf-8"))
+                except Exception as e:
+                    logger.exception("failed to decode JSON message: %s", e)
+                    return 0
+
+                # Wrap decoded value so existing handlers can still call message.value()
+                class DecodedMessage:
+                    def __init__(self, original_message, value):
+                        self.original_message = original_message
+                        self._value = value
+
+                    def value(self):
+                        return self._value
+
+                    def key(self):
+                        return self.original_message.key()
+
+                    def topic(self):
+                        return self.original_message.topic()
+
+                    def partition(self):
+                        return self.original_message.partition()
+
+                    def offset(self):
+                        return self.original_message.offset()
+
+                message = DecodedMessage(message, decoded_value)
 
             self.message_handler(message)
             return 1

@@ -85,7 +85,7 @@ class Station(Producer):
                 "train_id": str(train.train_id),
                 "direction": direction,
                 "line": self.color.name if hasattr(self.color, "name") else str(self.color),
-                "train_status": str(train.status),
+                "train_status": train.status.name,
                 "prev_station_id": int(prev_station_id) if prev_station_id is not None else -1,
                 "prev_direction": prev_direction if prev_direction is not None else "",
             },

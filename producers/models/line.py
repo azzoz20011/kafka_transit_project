@@ -88,7 +88,7 @@ class Line:
         while trains_advanced < self.num_trains - 1:
             # The train departs the current station
             if b_direction is True:
-                self.stations[curr_index].b_train = None
+                self.stations[curr_index].b_train = None 
             else:
                 self.stations[curr_index].a_train = None
 

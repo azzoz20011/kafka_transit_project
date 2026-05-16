@@ -21,14 +21,15 @@ KSQL_URL = "http://localhost:8088"
 #       Make sure to cast the COUNT of station id to `count`
 #       Make sure to set the value format to JSON
 
-
 KSQL_STATEMENT = """
+SET 'auto.offset.reset' = 'earliest';
+
 CREATE TABLE turnstile (
     station_id INT PRIMARY KEY,
     station_name VARCHAR,
     line VARCHAR
 ) WITH (
-    KAFKA_TOPIC='org.chicago.cta.station.turnstile.lake',
+    KAFKA_TOPIC='org.chicago.cta.station.turnstile',
     PARTITIONS=1,
     VALUE_FORMAT='AVRO'
 );
@@ -43,8 +44,8 @@ WITH (KAFKA_TOPIC='TURNSTILE_SUMMARY', VALUE_FORMAT='JSON') AS
 
 def execute_statement():
     """Executes the KSQL statement against the KSQL API"""
-    if topic_check.topic_exists("TURNSTILE_SUMMARY") is True:
-        return
+    # if topic_check.topic_exists("TURNSTILE_SUMMARY") is True:
+    #     return
 
     logging.debug("executing ksql statement...")
 
@@ -66,4 +67,4 @@ def execute_statement():
 
 
 if __name__ == "__main__":
-    execute_statement()
+    execute_statement() 
